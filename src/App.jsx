@@ -215,18 +215,13 @@ export default function App() {
         if (message.includes('frame=')) setStatus('Finishing MP4…');
       });
       const base = `${import.meta.env.BASE_URL}ffmpeg`;
-      const [coreResponse, wasmResponse] = await Promise.all([
-        fetch(`${base}/ffmpeg-core.js`),
-        fetch(`${base}/ffmpeg-core.wasm`)
-      ]);
+      const coreURL = `${base}/ffmpeg-core.js`;
+      const wasmURL = `${base}/ffmpeg-core.wasm`;
+      const [coreResponse, wasmResponse] = await Promise.all([fetch(coreURL), fetch(wasmURL)]);
       if (!coreResponse.ok || !wasmResponse.ok) {
         throw new Error('Local FFmpeg files could not be loaded. Refresh the page and try again.');
       }
-      const [coreBlob, wasmBlob] = await Promise.all([coreResponse.blob(), wasmResponse.blob()]);
-      await ffmpeg.load({
-        coreURL: await toBlobURL(URL.createObjectURL(coreBlob), 'text/javascript'),
-        wasmURL: await toBlobURL(URL.createObjectURL(wasmBlob), 'application/wasm')
-      });
+      await ffmpeg.load({ coreURL, wasmURL });
       await ffmpeg.writeFile('input.webm', await fetchFile(webm));
       await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'buylora-product-video.mp4']);
       const output = await ffmpeg.readFile('buylora-product-video.mp4');
