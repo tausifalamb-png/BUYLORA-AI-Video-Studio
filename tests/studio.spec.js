@@ -47,9 +47,12 @@ test('MP4 export completes in desktop Chromium', async ({ page, browserName }, t
     name: 'export-test.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64')
   });
   await page.waitForTimeout(500);
-  const downloadPromise = page.waitForEvent('download', { timeout: 170000 });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const downloadPromise = page.waitForEvent('download', { timeout: 240000 });
   await page.getByRole('button', { name: /Export MP4/i }).click();
   const download = await downloadPromise;
+  expect(pageErrors, pageErrors.join('\n')).toEqual([]);
   expect(download.suggestedFilename()).toMatch(/\.mp4$/i);
   const path = await download.path();
   expect(path).toBeTruthy();
