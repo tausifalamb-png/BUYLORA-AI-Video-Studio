@@ -33,7 +33,7 @@ test('product image upload and template selection work', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Bold Launch/i })).toHaveClass(/selected/);
 });
 
-test('MP4 export completes in desktop Chromium', async ({ page, browserName }, testInfo) => {
+test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'MP4 export is run once on desktop Chromium');
   await page.goto('/');
   const png = await page.evaluate(() => {
@@ -46,17 +46,20 @@ test('MP4 export completes in desktop Chromium', async ({ page, browserName }, t
   await page.locator('input[type=file]').setInputFiles({
     name: 'export-test.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64')
   });
-  await page.waitForTimeout(500);
-  const pageErrors = [];
-  page.on('pageerror', error => pageErrors.push(error.message));
-  const downloadPromise = page.waitForEvent('download', { timeout: 240000 });
+  await expect(page.getByText('Product image added')).toBeVisible();
+  const downloadPromise = page.waitForEvent('download', { timeout: 150000 }).then(download => ({ download })).catch(() => null);
+  const errorPromise = page.locator('.error-message').waitFor({ state: 'visible', timeout: 150000 }).then(async () => ({ error: await page.locator('.error-message').innerText() })).catch(() => null);
   await page.getByRole('button', { name: /Export MP4/i }).click();
-  const download = await downloadPromise;
-  expect(pageErrors, pageErrors.join('\n')).toEqual([]);
+  const result = await Promise.race([downloadPromise, errorPromise]);
+  expect(result, 'Export neither downloaded a file nor displayed an error').not.toBeNull();
+  if (result?.error) throw new Error('Export UI error: ' + result.error);
+  const download = result.download;
   expect(download.suggestedFilename()).toMatch(/\.mp4$/i);
   const path = await download.path();
   expect(path).toBeTruthy();
   const fs = await import('node:fs/promises');
-  const stat = await fs.stat(path);
-  expect(stat.size).toBeGreaterThan(1000);
+  const file = await fs.readFile(path);
+  expect(file.byteLength).toBeGreaterThan(1000);
+  expect(file.subarray(4, 8).toString()).toBe('ftyp');
+  await expect(page.getByText('MP4 exported successfully.')).toBeVisible({ timeout: 15000 });
 });
