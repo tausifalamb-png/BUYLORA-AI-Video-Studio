@@ -114,6 +114,7 @@ export default function App() {
   const rafRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const lastProgressRef = useRef(0);
   const [imageUrl, setImageUrl] = useState('');
   const [data, setData] = useState({ name: 'Your Product', eyebrow: 'Meet your new favourite', description: 'Thoughtful design. Everyday performance.', price: 'Explore now' });
   const [template, setTemplate] = useState('spotlight');
@@ -128,7 +129,10 @@ export default function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     drawFrame(ctx, imageRef.current, data, template, time, canvas.width, canvas.height);
-    setProgress(time);
+    if (time === 0 || time >= 8 || time - lastProgressRef.current >= 0.15) {
+      lastProgressRef.current = time;
+      setProgress(time);
+    }
   }, [data, template]);
 
   useEffect(() => {
@@ -149,9 +153,11 @@ export default function App() {
 
   const update = (key, value) => setData(current => ({ ...current, [key]: value }));
 
+  useEffect(() => () => { if (imageUrl) URL.revokeObjectURL(imageUrl); }, [imageUrl]);
+
   const handleImage = (file) => {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setError('Please choose an image file.');
       return;
     }
@@ -182,12 +188,18 @@ export default function App() {
     setExporting(true);
     setStatus('Rendering video…');
     setPlaying(false);
+    let stream = null;
+    let ffmpegInstance = null;
+    let recorder = null;
     try {
       const canvas = canvasRef.current;
-      const stream = canvas.captureStream(30);
+      if (!canvas?.captureStream || typeof MediaRecorder === 'undefined') {
+        throw new Error('This browser does not support canvas video recording. Try the latest Chrome or Edge.');
+      }
+      stream = canvas.captureStream(30);
       const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
         ? 'video/webm;codecs=vp9' : 'video/webm';
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
       recorderRef.current = recorder;
       chunksRef.current = [];
       recorder.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data); };
@@ -210,31 +222,38 @@ export default function App() {
       stream.getTracks().forEach(track => track.stop());
       const webm = await stopped;
       setStatus('Converting to MP4…');
-      const ffmpeg = new FFmpeg();
-      ffmpeg.on('log', ({ message }) => {
+      ffmpegInstance = new FFmpeg();
+      ffmpegInstance.on('log', ({ message }) => {
         if (message.includes('frame=')) setStatus('Finishing MP4…');
       });
       const base = `${import.meta.env.BASE_URL}ffmpeg`;
       const coreURL = `${base}/ffmpeg-core.js`;
       const wasmURL = `${base}/ffmpeg-core.wasm`;
-      const workerURL = `${base}/ffmpeg-core.worker.js`;
-      const [coreResponse, wasmResponse, workerResponse] = await Promise.all([fetch(coreURL), fetch(wasmURL), fetch(workerURL)]);
-      if (!coreResponse.ok || !wasmResponse.ok || !workerResponse.ok) {
+      const [coreResponse, wasmResponse] = await Promise.all([fetch(coreURL), fetch(wasmURL)]);
+      if (!coreResponse.ok || !wasmResponse.ok) {
         throw new Error('Local FFmpeg files could not be loaded. Refresh the page and try again.');
       }
-      await ffmpeg.load({ coreURL, wasmURL, workerURL });
-      await ffmpeg.writeFile('input.webm', await fetchFile(webm));
-      await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'buylora-product-video.mp4']);
-      const output = await ffmpeg.readFile('buylora-product-video.mp4');
-      downloadBlob(new Blob([output.buffer], { type: 'video/mp4' }), 'buylora-product-video.mp4');
-      await ffmpeg.deleteFile('input.webm');
-      await ffmpeg.deleteFile('buylora-product-video.mp4');
-      ffmpeg.terminate();
+      let loadTimer;
+      try {
+        await Promise.race([
+          ffmpegInstance.load({ coreURL, wasmURL }),
+          new Promise((_, reject) => { loadTimer = setTimeout(() => reject(new Error('FFmpeg engine did not start within 90 seconds.')), 90000); })
+        ]);
+      } finally { clearTimeout(loadTimer); }
+      await ffmpegInstance.writeFile('input.webm', await fetchFile(webm));
+      const exitCode = await ffmpegInstance.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'buylora-product-video.mp4']);
+      if (exitCode !== 0) throw new Error(`MP4 conversion failed (FFmpeg exit code ${exitCode}).`);
+      const output = await ffmpegInstance.readFile('buylora-product-video.mp4');
+      if (!(output instanceof Uint8Array) || output.byteLength < 1000) throw new Error('FFmpeg produced an empty MP4 file.');
+      downloadBlob(new Blob([output], { type: 'video/mp4' }), 'buylora-product-video.mp4');
       setStatus('MP4 exported successfully.');
     } catch (e) {
       setError('Export failed: ' + (e?.message || 'Unknown error') + '. Try a modern browser and stable internet.');
       setStatus('');
     } finally {
+      if (recorder && recorder.state !== 'inactive') { try { recorder.stop(); } catch {} }
+      stream?.getTracks().forEach(track => track.stop());
+      ffmpegInstance?.terminate();
       setExporting(false);
     }
   };
@@ -261,11 +280,11 @@ export default function App() {
         <div className="studio-grid">
           <section className="panel controls-panel">
             <div className="section-heading"><span className="step">01</span><div><h2>Product details</h2><p>Start with your product information</p></div></div>
-            <div className="upload-zone" onClick={() => fileRef.current?.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleImage(e.dataTransfer.files?.[0]); }}>
+            <div className="upload-zone" onClick={e => { if (!e.target.closest("button,input")) fileRef.current?.click(); }} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleImage(e.dataTransfer.files?.[0]); }}>
               {imageUrl ? <img className="uploaded-thumb" src={imageUrl} alt="Uploaded product" /> : <div className="upload-icon"><Upload size={22} /></div>}
               <div><strong>{imageUrl ? 'Product image added' : 'Upload product image'}</strong><span>JPG or PNG · Up to 12 MB</span></div>
-              <button className="browse-btn" type="button">Browse</button>
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => handleImage(e.target.files?.[0])} />
+              <button className="browse-btn" type="button" onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}>Browse</button>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onClick={e => e.stopPropagation()} onChange={e => handleImage(e.target.files?.[0])} />
             </div>
             <label>Product name<input value={data.name} maxLength={36} onChange={e => update('name', e.target.value)} placeholder="e.g. Nova Wireless Earbuds" /></label>
             <label>Small headline<input value={data.eyebrow} maxLength={40} onChange={e => update('eyebrow', e.target.value)} placeholder="e.g. Sound without limits" /></label>
