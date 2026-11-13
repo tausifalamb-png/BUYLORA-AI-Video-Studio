@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Upload, Play, Pause, Download, Sparkles, Film, Image as ImageIcon, Type, Clock3, CheckCircle2, LoaderCircle, RotateCcw } from 'lucide-react';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { fetchFile } from '@ffmpeg/util';
 
 const BRAND = '#1F2A6B';
 const templates = [
@@ -217,11 +217,12 @@ export default function App() {
       const base = `${import.meta.env.BASE_URL}ffmpeg`;
       const coreURL = `${base}/ffmpeg-core.js`;
       const wasmURL = `${base}/ffmpeg-core.wasm`;
-      const [coreResponse, wasmResponse] = await Promise.all([fetch(coreURL), fetch(wasmURL)]);
-      if (!coreResponse.ok || !wasmResponse.ok) {
+      const workerURL = `${base}/ffmpeg-core.worker.js`;
+      const [coreResponse, wasmResponse, workerResponse] = await Promise.all([fetch(coreURL), fetch(wasmURL), fetch(workerURL)]);
+      if (!coreResponse.ok || !wasmResponse.ok || !workerResponse.ok) {
         throw new Error('Local FFmpeg files could not be loaded. Refresh the page and try again.');
       }
-      await ffmpeg.load({ coreURL, wasmURL });
+      await ffmpeg.load({ coreURL, wasmURL, workerURL });
       await ffmpeg.writeFile('input.webm', await fetchFile(webm));
       await ffmpeg.exec(['-i', 'input.webm', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'buylora-product-video.mp4']);
       const output = await ffmpeg.readFile('buylora-product-video.mp4');
