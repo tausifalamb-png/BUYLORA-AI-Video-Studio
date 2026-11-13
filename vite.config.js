@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/BUYLORA-AI-Video-Studio/'
+  base: process.env.GITHUB_ACTIONS ? '/BUYLORA-AI-Video-Studio/' : '/'
 });
