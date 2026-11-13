@@ -11,8 +11,8 @@ export default defineConfig({
     trace: 'retain-on-failure'
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chromium', use: { ...devices['iPhone 13'] } }
+    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], browserName: 'chromium' } },
+    { name: 'mobile-chromium', use: { ...devices['iPhone 13'], browserName: 'chromium' } }
   ],
   webServer: {
     command: 'npm run preview -- --host 127.0.0.1',
