@@ -24,6 +24,6 @@ npm run preview
 
 ## Notes
 - Video rendering happens in the browser; no paid AI API is required.
-- First MP4 export downloads FFmpeg core assets from unpkg and therefore needs an internet connection.
+- FFmpeg core assets are bundled with the app build and served locally. The first conversion can take longer while the browser initializes WebAssembly.
 - Browser memory and device performance affect export time. Test on desktop and mobile before public launch.
 - This MVP exports a fixed 8-second 16:9 video. Audio, multiple scenes, saved projects, and server-side rendering are not included yet.
