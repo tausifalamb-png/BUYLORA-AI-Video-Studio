@@ -145,7 +145,7 @@ export default function App() {
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [playing, render, progress]);
+  }, [playing, render]);
 
   const update = (key, value) => setData(current => ({ ...current, [key]: value }));
 
