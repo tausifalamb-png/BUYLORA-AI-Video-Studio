@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('studio loads and adapts to the viewport', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Make your product/i })).toBeVisible();
-  await expect(page.getByText('Product details')).toBeVisible();
+  await expect(page.getByText('Multi-scene timeline')).toBeVisible();
   await expect(page.getByRole('button', { name: /Export MP4/i })).toBeVisible();
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
@@ -29,8 +29,8 @@ test('product image upload and template selection work', async ({ page }) => {
     buffer: Buffer.from(png, 'base64')
   });
   await expect(page.getByText('Product image added')).toBeVisible();
-  await page.getByRole('button', { name: /Bold Launch/i }).click();
-  await expect(page.getByRole('button', { name: /Bold Launch/i })).toHaveClass(/selected/);
+  await page.getByRole('button', { name: /Editorial Fashion/i }).click();
+  await expect(page.getByRole('button', { name: /Editorial Fashion/i })).toHaveClass(/selected/);
 });
 
 test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async ({ page }, testInfo) => {
@@ -65,25 +65,28 @@ test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async
 });
 
 
-test('advanced template library and export resolution controls are available', async ({ page }) => {
+test('multi-scene editor, social formats and project controls are available', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Template library · 24 layouts')).toBeVisible();
   await expect(page.locator('.template-card')).toHaveCount(24);
-  await page.getByRole('button', { name: /1080p · Full HD/i }).click();
-  await expect(page.getByRole('button', { name: /1080p · Full HD/i })).toHaveClass(/active/);
-  await expect(page.getByText(/Export 1080p MP4/i)).toBeVisible();
-  await expect(page.getByText('Audio studio')).toBeVisible();
-  await expect(page.getByText('Background music')).toBeVisible();
+  await expect(page.locator('.scene-row')).toHaveCount(5);
+  await page.getByRole('button', { name: /9:16/ }).click();
+  await expect(page.getByRole('button', { name: /Reels \/ Shorts/i })).toHaveClass(/active/);
+  await page.getByRole('button', { name: /1080p Full HD/i }).click();
+  await expect(page.getByText('Advanced design controls')).toBeVisible();
+  await expect(page.getByText('Audio & project system')).toBeVisible();
   await expect(page.getByRole('button', { name: /Record voice-over/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Save project/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Reopen saved/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Reopen project/i })).toBeVisible();
+  await page.getByRole('button', { name: /Features/i }).last().click();
+  await expect(page.locator('.scene-row')).toHaveCount(6);
 });
 
-test('project details auto-save and restore in the same browser', async ({ page }) => {
+test('scene project auto-saves and restores in the same browser', async ({ page }) => {
   await page.goto('/');
-  const name = page.locator('label').filter({ hasText: 'Product name' }).locator('input');
-  await name.fill('BUYLORA Test Headphones');
-  await page.waitForTimeout(1200);
+  const headline = page.locator('label').filter({ hasText: 'Scene headline' }).locator('input');
+  await headline.fill('BUYLORA Test Headphones');
+  await page.waitForTimeout(1300);
   await page.reload();
-  await expect(page.locator('label').filter({ hasText: 'Product name' }).locator('input')).toHaveValue('BUYLORA Test Headphones');
+  await expect(page.locator('label').filter({ hasText: 'Scene headline' }).locator('input')).toHaveValue('BUYLORA Test Headphones');
 });
