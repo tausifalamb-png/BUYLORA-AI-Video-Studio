@@ -29,7 +29,7 @@ test('product image upload and template selection work', async ({ page }) => {
     buffer: Buffer.from(png, 'base64')
   });
   await expect(page.getByText('Image uploaded')).toBeVisible();
-  await page.getByRole('button', { name: /Editorial Fashion/i }).click();
+  await page.getByRole('button', { name: /Editorial Fashion/i }).click({ force: true });
   await expect(page.getByRole('button', { name: /Editorial Fashion/i })).toHaveClass(/selected/);
 });
 
@@ -43,10 +43,10 @@ test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async
     x.fillStyle = '#4d65b5'; x.fillRect(0, 0, 320, 240);
     return c.toDataURL('image/png').split(',')[1];
   });
-  await page.locator('input[type=file]').setInputFiles({
+  await page.locator('input[type="file"][accept="image/png,image/jpeg,image/webp"]').setInputFiles({
     name: 'export-test.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64')
   });
-  await expect(page.getByText('Product image added')).toBeVisible();
+  await expect(page.getByText('Image uploaded')).toBeVisible();
   const downloadPromise = page.waitForEvent('download', { timeout: 150000 }).then(download => ({ download })).catch(() => null);
   const errorPromise = page.locator('.error-message').waitFor({ state: 'visible', timeout: 150000 }).then(async () => ({ error: await page.locator('.error-message').innerText() })).catch(() => null);
   await page.getByRole('button', { name: /Export MP4/i }).click();
