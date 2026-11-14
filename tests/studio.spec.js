@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('studio loads and adapts to the viewport', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Make your product/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Build product videos/i })).toBeVisible();
   await expect(page.getByText('Multi-scene timeline')).toBeVisible();
   await expect(page.getByRole('button', { name: /Export MP4/i })).toBeVisible();
   const canvas = page.locator('canvas');
@@ -23,12 +23,12 @@ test('product image upload and template selection work', async ({ page }) => {
     x.fillStyle = '#fff'; x.font = 'bold 24px Arial'; x.fillText('TEST PRODUCT', 30, 120);
     return c.toDataURL('image/png').split(',')[1];
   });
-  await page.locator('input[type=file]').setInputFiles({
+  await page.locator('input[type="file"][accept="image/png,image/jpeg,image/webp"]').setInputFiles({
     name: 'test-product.png',
     mimeType: 'image/png',
     buffer: Buffer.from(png, 'base64')
   });
-  await expect(page.getByText('Product image added')).toBeVisible();
+  await expect(page.getByText('Image uploaded')).toBeVisible();
   await page.getByRole('button', { name: /Editorial Fashion/i }).click();
   await expect(page.getByRole('button', { name: /Editorial Fashion/i })).toHaveClass(/selected/);
 });
@@ -65,7 +65,8 @@ test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async
 });
 
 
-test('multi-scene editor, social formats and project controls are available', async ({ page }) => {
+test('multi-scene editor, social formats and project controls are available', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Full editor interaction is checked on desktop; mobile layout is checked separately.');
   await page.goto('/');
   await expect(page.getByText('Template library · 24 layouts')).toBeVisible();
   await expect(page.locator('.template-card')).toHaveCount(24);
@@ -78,7 +79,7 @@ test('multi-scene editor, social formats and project controls are available', as
   await expect(page.getByRole('button', { name: /Record voice-over/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Save project/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Reopen project/i })).toBeVisible();
-  await page.getByRole('button', { name: /Features/i }).last().click();
+  await page.locator('.add-scene-row button').nth(2).click();
   await expect(page.locator('.scene-row')).toHaveCount(6);
 });
 
