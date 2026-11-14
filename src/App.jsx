@@ -96,8 +96,8 @@ export default function App(){
     const base=import.meta.env.BASE_URL+'ffmpeg',coreURL=base+'/ffmpeg-core.js',wasmURL=base+'/ffmpeg-core.wasm';const [cr,wr]=await Promise.all([fetch(coreURL),fetch(wasmURL)]);if(!cr.ok||!wr.ok)throw new Error('FFmpeg engine files could not be loaded. Refresh and retry.');
     await ffmpeg.load({coreURL,wasmURL});await ffmpeg.writeFile('input.webm',await fetchFile(webm));
     const args=['-i','input.webm','-c:v','libx264','-preset','ultrafast','-crf',resolution==='1080'?'23':'25','-pix_fmt','yuv420p','-movflags','+faststart'];
-    if(audioDestination)args.push('-c:a','aac','-b:a','160k','-shortest');else args.push('-an');
-    args.push('buylora-video.mp4');const code=await ffmpeg.exec(args);if(code!==0)throw new Error('MP4 conversion failed with FFmpeg code '+code);
+    if(audioDestination)args.push('-c:a','aac','-b:a','160k');else args.push('-an');
+    args.push('-t','10','buylora-video.mp4');const code=await ffmpeg.exec(args);if(code!==0)throw new Error('MP4 conversion failed with FFmpeg code '+code);
     const output=await ffmpeg.readFile('buylora-video.mp4');if(!(output instanceof Uint8Array)||output.byteLength<1000||new TextDecoder().decode(output.slice(4,8))!=='ftyp')throw new Error('MP4 output validation failed.');
     downloadBlob(new Blob([output],{type:'video/mp4'}),'buylora-'+resolution+'p-product-video.mp4');setStatus(resolution+'p MP4 exported successfully'+(audioDestination?' with audio.':'.'));
   }catch(e){setError('Export failed: '+(e?.message||'Unknown error'));setStatus('');}finally{if(recorder&&recorder.state!=='inactive'){try{recorder.stop();}catch{}}stream?.getTracks().forEach(t=>t.stop());sourceNodes.forEach(n=>{try{n.stop();}catch{}});if(audioCtx)await audioCtx.close().catch(()=>{});ffmpeg?.terminate();setExporting(false);}};
