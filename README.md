@@ -3,7 +3,8 @@
 A browser-based product video editor built with React, Vite, Canvas and FFmpeg.wasm.
 
 ## Implemented editor features
-- Multi-scene starter timeline: Intro, Product Reveal, Features, Offer and Ending
+- Visual multi-scene timeline with proportional clip blocks, active playhead, scrubbing and drag-to-reorder on desktop
+- Multi-scene starter sequence: Intro, Product Reveal, Features, Offer and Ending
 - Add scenes, reorder, duplicate and delete
 - Independent scene duration and text content
 - Per-scene font size, text/background/accent colours, text alignment
@@ -27,6 +28,8 @@ npm run dev
 ```bash
 npm run build
 npx playwright test
+
+The Android-sized Chromium project emulates a Pixel 7 viewport for CI export checks. It is not a substitute for a physical Android-device test.
 ```
 
 ## Important limitations
