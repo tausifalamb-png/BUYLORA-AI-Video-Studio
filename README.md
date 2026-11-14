@@ -1,19 +1,21 @@
-# BUYLORA AI Video Studio
+# BUYLORA Video Studio
 
-A browser-based product advertisement video maker built with React, Vite, Canvas and FFmpeg.wasm.
+A browser-based product video editor built with React, Vite, Canvas and FFmpeg.wasm.
 
-## Current features
-- Product image upload (JPG, PNG, WebP; up to 12 MB)
-- Editable product name, headline, description and CTA/price
-- 24 selectable layouts across Electronics, Fashion, Beauty, Home, Sale, Launch, Premium and Comparison
-- Live animated 16:9 preview
-- 720p HD and 1080p Full HD MP4 export
-- Background music upload with volume control
-- Voice-over recording through the browser microphone (permission required)
-- Music and voice-over mixed into MP4 export
-- Automatic local project saving and manual Save / Reopen controls
-- Project media stored in browser IndexedDB on the same device/browser
-- BUYLORA identity: indigo #1F2A6B and “Smart picks. Simple buying.”
+## Implemented editor features
+- Multi-scene starter timeline: Intro, Product Reveal, Features, Offer and Ending
+- Add scenes, reorder, duplicate and delete
+- Independent scene duration and text content
+- Per-scene font size, text/background/accent colours, text alignment
+- Image zoom and X/Y positioning controls
+- Scene transition choices: fade, slide and zoom
+- 24 templates across Electronics, Fashion, Beauty, Home, Sale, Launch, Premium and Comparison
+- Social aspect ratios: 9:16, 1:1 and 16:9
+- 720p and 1080p MP4 export
+- Background music upload and volume control
+- Browser microphone voice-over recording
+- Auto-save, manual save and reopen using browser IndexedDB
+- BUYLORA identity: #1F2A6B and “Smart picks. Simple buying.”
 
 ## Run locally
 ```bash
@@ -21,19 +23,21 @@ npm install
 npm run dev
 ```
 
-## Production build
+## Build and test
 ```bash
 npm run build
-npm run preview
+npx playwright test
 ```
 
 ## Important limitations
-- Projects are saved locally in the browser, not synced to a cloud account. Clearing browser site data can remove saved projects.
-- Uploaded music and voice-over remain on the device/browser; they are not uploaded to a server.
-- Voice-over recording requires microphone permission and a secure context (HTTPS or localhost).
-- Export performance depends on device memory, CPU, browser codec support and available storage. 1080p export is more demanding than 720p, especially on phones.
-- The video renderer currently creates a single 10-second animated product scene. The template library changes its visual treatment; it is not yet a multi-scene timeline editor.
-- No paid AI API is required. The studio does not generate AI images, music or synthetic speech.
+- Projects are stored locally in the same browser/device; they are not cloud-synced. Clearing site data may delete them.
+- One uploaded product image is currently shared across all scenes; separate media per scene is not implemented.
+- Transition selection is currently a basic visual treatment, not a full professional transition engine.
+- Font family selection, freeform shape layers, multi-track timeline, drag-and-drop scene reordering, independent per-scene image assets and project-file export are not implemented yet.
+- AI copywriting and automatic background removal are not included.
+- Browser/device performance and codec support affect export time and reliability. 1080p export is more demanding on phones.
+- Voice-over needs microphone permission and a secure context (HTTPS or localhost).
+- No paid AI API is required; the app does not generate AI imagery, music or speech.
 
 ## Privacy
-Media processing and export happen in the browser. No media upload backend is configured.
+Video rendering and project storage run in the browser. No media upload backend is configured.
