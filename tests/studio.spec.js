@@ -135,3 +135,6 @@ test('scene project auto-saves and restores in the same browser', async ({ page 
   await page.reload();
   await expect(page.locator('label').filter({ hasText: 'Scene headline' }).locator('input')).toHaveValue('BUYLORA Test Headphones');
 });
+
+
+test('one video brief generates a complete five-scene setup', async ({ page }) => { await page.goto('/'); await page.getByLabel('Video brief').fill('Create a 20-second premium Instagram Reel for boAt wireless earbuds with a dark luxury look and an explore now ending.'); await page.getByRole('button', { name: /Generate video setup/i }).click(); await expect(page.locator('.scene-row')).toHaveCount(5); await expect(page.getByText('5 scenes · 20s total')).toBeVisible(); await expect(page.getByRole('button', { name: /Reels \/ Shorts/i })).toHaveClass(/active/); await expect(page.locator('label').filter({ hasText: 'Scene headline' }).locator('input')).toHaveValue(/boAt wireless earbuds/i); });
