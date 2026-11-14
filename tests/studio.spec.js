@@ -63,3 +63,27 @@ test('MP4 export completes and downloads a valid MP4 in desktop Chromium', async
   expect(file.subarray(4, 8).toString()).toBe('ftyp');
   await expect(page.getByText('MP4 exported successfully.')).toBeVisible({ timeout: 15000 });
 });
+
+
+test('advanced template library and export resolution controls are available', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Template library · 24 layouts')).toBeVisible();
+  await expect(page.locator('.template-card')).toHaveCount(24);
+  await page.getByRole('button', { name: /1080p · Full HD/i }).click();
+  await expect(page.getByRole('button', { name: /1080p · Full HD/i })).toHaveClass(/active/);
+  await expect(page.getByText(/Export 1080p MP4/i)).toBeVisible();
+  await expect(page.getByText('Audio studio')).toBeVisible();
+  await expect(page.getByText('Background music')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Record voice-over/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Save project/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Reopen saved/i })).toBeVisible();
+});
+
+test('project details auto-save and restore in the same browser', async ({ page }) => {
+  await page.goto('/');
+  const name = page.locator('label').filter({ hasText: 'Product name' }).locator('input');
+  await name.fill('BUYLORA Test Headphones');
+  await page.waitForTimeout(1200);
+  await page.reload();
+  await expect(page.locator('label').filter({ hasText: 'Product name' }).locator('input')).toHaveValue('BUYLORA Test Headphones');
+});
